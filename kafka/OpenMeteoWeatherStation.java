@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.util.Random;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.JsonObject;
 import retrofit2.Call;
 import retrofit2.Retrofit;
 import retrofit2.http.GET;
@@ -18,9 +19,9 @@ public class OpenMeteoWeatherStation {
     // Define the Retrofit service interface for the Open-Meteo API
     private interface OpenMeteoService {
         @GET("v1/forecast")
-        Call<WeatherStation> getWeatherData(@Query("latitude") double latitude,
-                                           @Query("longitude") double longitude,
-                                           @Query("current_weather") boolean currentWeather);
+        Call<JsonObject> getWeatherData(@Query("latitude") double latitude,
+                                        @Query("longitude") double longitude,
+                                        @Query("current_weather") boolean currentWeather);
     }
 
     public WeatherStation constructStation(long id) {
@@ -31,26 +32,32 @@ public class OpenMeteoWeatherStation {
                 .addConverterFactory(GsonConverterFactory.create(gson))
                 .build();
         OpenMeteoService openMeteoService = retrofit.create(OpenMeteoService.class);
+
         Random randomno = new Random();
         double latitude = 50 + randomno.nextFloat() * 10;
         double longitude = 15 + randomno.nextFloat() * 10;
         // Retrieve weather data from Open-Meteo API and send to Kafka queue
-        Call<WeatherStation> call = openMeteoService.getWeatherData(latitude,longitude,true);
-        WeatherStation weatherData = new WeatherStation(id);
+        Call<JsonObject> call = openMeteoService.getWeatherData(latitude,longitude,true);
+        JsonObject tmp = null;
 
         try {
-            weatherData = call.execute().body();
+            tmp = call.execute().body();
         } catch (IOException e) { // Handle API request error
             e.printStackTrace();
         }
-        // missing attributes
-        weatherData.setStation_id(id);
-        double d = Math.random() * 100;
-        if ((d -= 30) < 0) weatherData.setBattery_status("low");
-        else if ((d -= 40) < 0) weatherData.setBattery_status("medium");
-        else weatherData.setBattery_status("high");
-        float humidity = randomno.nextFloat() * 100;
-        weatherData.setHumidity(humidity);
+        WeatherStation weatherData = new WeatherStation(id);
+            // matching attributes
+            weatherData.setGenerationtime_ms(tmp.get("generationtime_ms").getAsLong());
+            weatherData.setTemperature(tmp.getAsJsonObject("current_weather").get("temperature").getAsInt());
+            weatherData.setWindspeed(tmp.getAsJsonObject("current_weather").get("windspeed").getAsInt());
+            // missing attributes
+            weatherData.setStation_id(id);
+            double d = Math.random() * 100;
+            if ((d -= 30) < 0) weatherData.setBattery_status("low");
+            else if ((d -= 40) < 0) weatherData.setBattery_status("medium");
+            else weatherData.setBattery_status("high");
+            int humidity = randomno.nextInt() * 100;
+            weatherData.setHumidity(humidity);
 
         return weatherData;
     }

@@ -59,7 +59,7 @@ public class WeatherStation {
             setS_no(getS_no()+1);
             // create random object
             Random randomno = new Random(); // range ==> (max - min + 1) + min
-            if(randomno.nextInt(100)<5) setBattery_status("full");
+            if(randomno.nextInt(100)<2) setBattery_status("full");
             else{
                 int percentage = (int) d;
                 if (percentage < 30)  setBattery_status("low");

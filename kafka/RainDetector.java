@@ -34,14 +34,14 @@ public class RainDetector {
         // Filter the messages based on humidity value and create a new KStream with filtered messages
         KStream<String, String> filtered = source.filter((key, value) -> {
             JSONObject message = new JSONObject(value);
-            double humidity = message.getJSONObject("current_weather").getDouble("humidity");
+            double humidity = message.getJSONObject("weather").getDouble("humidity");
             return humidity > 70;
         });
         // Extract the station id from the filtered messages and send it to the output topic
         filtered.foreach((key, value) -> {
             JSONObject message = new JSONObject (value);
             long stationId = message.getLong("station_id");
-            float time = message.getFloat("generationtime_ms");
+            float time = message.getFloat("status_timestamp");
             KafkaProducer<String,String> kafkaProducer = new KafkaProducer<>(props);
             kafkaProducer.send(new ProducerRecord<>("rain-alert", "Station "+ Long.toString(stationId)
                     + " has high humidity at " + Float.toString(time)));

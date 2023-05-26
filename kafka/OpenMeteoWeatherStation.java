@@ -48,15 +48,16 @@ public class OpenMeteoWeatherStation {
         WeatherStation weatherData = new WeatherStation(id);
             // matching attributes
             weatherData.setGenerationtime_ms(tmp.get("generationtime_ms").getAsLong());
-            weatherData.setTemperature(tmp.getAsJsonObject("current_weather").get("temperature").getAsInt());
+            weatherData.setTemperature((9/5 * (tmp.getAsJsonObject("current_weather").get("temperature").getAsInt()))+32);
             weatherData.setWindspeed(tmp.getAsJsonObject("current_weather").get("windspeed").getAsInt());
             // missing attributes
             weatherData.setStation_id(id);
             double d = Math.random() * 100;
-            if ((d -= 30) < 0) weatherData.setBattery_status("low");
-            else if ((d -= 40) < 0) weatherData.setBattery_status("medium");
-            else weatherData.setBattery_status("high");
-            int humidity = randomno.nextInt() * 100;
+            int percentage = (int) d;
+            if (percentage < 30)  weatherData.setBattery_status("low");
+            else if (percentage < 70) weatherData.setBattery_status("medium");
+            else if (percentage < 100) weatherData.setBattery_status("high");
+            int humidity = randomno.nextInt(101);
             weatherData.setHumidity(humidity);
 
         return weatherData;

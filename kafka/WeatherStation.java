@@ -9,7 +9,6 @@ public class WeatherStation {
         int temperature;
         int wind_speed;
     }
-
     private long station_id;
     private long s_no;
     private long status_timestamp;
@@ -58,14 +57,15 @@ public class WeatherStation {
         double d = Math.random() * 100;
         if ((d -= 10) > 0){
             setS_no(getS_no()+1);
-
             // create random object
             Random randomno = new Random(); // range ==> (max - min + 1) + min
-
-            if ((d -= 30) < 0)  setBattery_status("low");
-            else if ((d -= 40) < 0) setBattery_status("medium");
-            else setBattery_status("high");
-
+            if(randomno.nextInt(100)<5) setBattery_status("full");
+            else{
+                int percentage = (int) d;
+                if (percentage < 30)  setBattery_status("low");
+                else if (percentage < 70) setBattery_status("medium");
+                else if (percentage < 100) setBattery_status("high");
+            }
             setGenerationtime_ms(System.currentTimeMillis());
             setTemperature(randomno.nextInt(49) - 3);
             setWindspeed(randomno.nextInt(61)+10);
@@ -74,7 +74,7 @@ public class WeatherStation {
     }
     public static void main(String[] args) throws InterruptedException {
         Gson gson = new Gson();
-        WeatherStation w = new WeatherStation(10);
+        WeatherStation w = new WeatherStation(7);
         while(true){
             w.generateStatusMessage();
             String json = gson.toJson(w);

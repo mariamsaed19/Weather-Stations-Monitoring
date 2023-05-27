@@ -3,6 +3,8 @@ package bitcask;
 import org.json.JSONObject;
 import sun.misc.Signal;
 import sun.misc.SignalHandler;
+import utils.FileUtils;
+import utils.PrintUtils;
 
 import java.io.*;
 import java.nio.file.Paths;
@@ -21,7 +23,8 @@ public class Bitcask {
     private int countSegments;
     private int offset;
     public Map<Long, KeydirEntity> keydir;
-    private final String KEY_NAME = "station_id";
+    private final String KEY_NAME;
+    private final String HINT_DIR = "hint";
     private final int MAX_SEGMENT_SIZE = 600; //TODO: set value
     private final int MAX_SEGMENT_COUNT = 10;
     private final int SLEEPING_PERIOD = 5000;
@@ -31,23 +34,31 @@ public class Bitcask {
     private static AtomicBoolean shuttingDown = new AtomicBoolean(false);
 
     private CompactionThread compactionThread ;
-    public Bitcask(String workingDir) throws FileNotFoundException {
-        this.workingDir = workingDir; //TODO: validate that the working directory exists
-        this.hintDir = Paths.get(this.workingDir, "hint").toString(); //TODO: handle if directory doesn't exist
+    public Bitcask(String workingDir, String keyName) {
+        this.workingDir = workingDir;
+        FileUtils.createDirIfNotExists(workingDir);
+
+        this.hintDir = Paths.get(this.workingDir, HINT_DIR).toString();
+        FileUtils.createDirIfNotExists(this.hintDir);
+
+        this.KEY_NAME = keyName;
 
         this.countSegments = FileUtils.getFilesList(this.workingDir).size();
 
         this.activeFile = Paths.get(this.workingDir, new Timestamp(System.currentTimeMillis()).toString()).toString();
-        this.activeFileStream = new DataOutputStream(new FileOutputStream(this.activeFile, true));
-//        this.activeFile = "2023-05-16 14:47:43.791"; //TODO: remove
+        try {
+            this.activeFileStream = new DataOutputStream(new FileOutputStream(this.activeFile, true));
+        } catch (FileNotFoundException e) {
+            throw new RuntimeException(e);
+        }
 
         System.out.println("initial count: "+this.countSegments);
         this.offset = 0;
         this.keydir = recover();
         this.safeClose();
         this.compactionThread = new CompactionThread();
+        this.compactionThread.setName("Compaction Thread");
         this.compactionThread.start();
-
     }
 
     private class CompactionThread extends Thread {
@@ -65,6 +76,7 @@ public class Bitcask {
                 String currActiveFile = getActiveFileIfCompReady();
                 if(currActiveFile!=null){
                     this.doCompaction(currActiveFile);
+                    showContent();
                 }
                 else{
                     System.out.println("Not Enough Files --> sleep ..");
@@ -82,8 +94,8 @@ public class Bitcask {
             System.out.println("Start Compaction ...");
 
             //copy active file name
-            String excludeFileName = currActiveFile.split("/")[1];
-            //TODO: get older files and exclude curr file -- done --
+            String excludeFileName = currActiveFile.split("/")[1]; //TODO:
+
             //list files in compaction directory -> sorted, exclude active
             List<String> compFileList = FileUtils.getOldFiles(workingDir, excludeFileName);
             System.out.println("excluded: "+excludeFileName+" Current complist "+compFileList.toString());
@@ -128,11 +140,7 @@ public class Bitcask {
             FileUtils.renameFile(tempHintFile, hintFile);
 
             updateKeydir(updatedHashtable);
-
-            //TODO: remove this part -- done --
             incrementCountSegment();
-            //updateCountSegments(-1*(compFileList.size()-1));
-
         }
         private void updateKeydir(Map<Long, KeydirEntity> updatedHashtable){
             keydirLock.writeLock().lock();
@@ -185,7 +193,7 @@ public class Bitcask {
         JSONObject obj2 = new JSONObject(jsonString2);
        // System.out.println(obj.keySet());
 
-        Bitcask bitcask = new Bitcask("bitcask");
+        Bitcask bitcask = new Bitcask("bitcask", "station_id");
         bitcask.showContent();
 
 //        bitcask.doCompaction();
@@ -281,16 +289,7 @@ public class Bitcask {
             }
         });
     }
-    //TODO: remove this -- done --
-//    public String getActiveFile(){
-//        activeFileLock.readLock().lock();
-//        try{
-//            return this.activeFile;
-//        }
-//        finally {
-//            activeFileLock.readLock().unlock();
-//        }
-//    }
+
     public Map<Long, KeydirEntity> getKeydir(){
         keydirLock.readLock().lock();
         try{
@@ -310,7 +309,7 @@ public class Bitcask {
             keydirLock.readLock().unlock();
         }
     }
-    //TODO: remove this and add "get activefile & decrement " method
+
     public String getActiveFileIfCompReady(){
         activeFileLock.writeLock().lock();
         try{
@@ -333,17 +332,7 @@ public class Bitcask {
             activeFileLock.writeLock().unlock();
         }
     }
-//    public int getCountSegments(){
-//        countSegmentLock.readLock().lock();
-//        try{
-//            return this.countSegments;
-//        }
-//        finally {
-//            countSegmentLock.readLock().unlock();
-//        }
-//    }
 
-    //TODO: modify to increment count --done--
     public void switchActiveFile(String newActiveFile){
         activeFileLock.writeLock().lock();
         try{
@@ -368,16 +357,7 @@ public class Bitcask {
             keydirLock.writeLock().unlock();
         }
     }
-    //TODO: remove this -- done --
-//    public void updateCountSegments(int count){
-//        countSegmentLock.writeLock().lock();
-//        try{
-//            this.countSegments += count;
-//        }
-//        finally {
-//            countSegmentLock.writeLock().unlock();
-//        }
-//    }
+
     public JSONObject readRecord(Long key){
         KeydirEntity entity = getKeydirEntity(key);
         String fileID = entity.getFileID();
@@ -449,29 +429,11 @@ public class Bitcask {
         this.offset += recordSize;
         if(this.offset > MAX_SEGMENT_SIZE){ //switch to new segment
 
-            //TODO: use only setActiveFile to increment the count and switch file -- done --
             this.switchActiveFile(Paths.get(this.workingDir, new Timestamp(System.currentTimeMillis()).toString()).toString());
             System.out.println("Add new segment ..");
             this.offset = 0;
         }
     }
-
-
-//    private void doCompaction(){
-//        //TODO: use method to get active file and decrement count -- done --
-//        String currActiveFile = this.getActiveFileIfCompReady();
-//        if (currActiveFile == null)
-//            return;
-//
-//        //TODO: send active file name -- done --
-//        System.out.println("Compaction is ready ..."+currActiveFile);
-//        CompactionThread comThread = new CompactionThread(currActiveFile);
-//        comThread.start();
-//
-//
-//    }
-
-
 
     public Map<Long, KeydirEntity> recoverFromHint(List<String> hintFiles){
 
@@ -508,9 +470,7 @@ public class Bitcask {
         }
         else{
             String cond = new File(hintFiles.get(hintFiles.size()-1)).getName();
-            //TODO: delete System.out.println("482 :"+cond);
             recentActiveFiles = FileUtils.getRecentFiles(this.workingDir,cond);
-            //TODO: delete  System.out.println("Hint file name: "+cond+" Recent list "+recentActiveFiles.toString());
         }
 
         for( String recentFile : recentActiveFiles){

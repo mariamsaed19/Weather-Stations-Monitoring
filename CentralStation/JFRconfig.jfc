@@ -1,40 +1,73 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE jfc SYSTEM "jfc.dtd">
 <jfc version="1.0">
-  <event name="jdk.GarbageCollection">
-    <setting name="enabled">true</setting>
-    <setting name="threshold">0 ms</setting>
-    <setting name="stacktrace">true</setting>
-    <setting name="period">1 s</setting>
-    <setting name="maxage">1 h</setting>
-  </event>
-  <event name="jdk.JavaIO">
-    <setting name="enabled">true</setting>
-    <setting name="threshold">0 ms</setting>
-    <setting name="stacktrace">false</setting>
-    <setting name="period">1 s</setting>
-    <setting name="maxage">1 h</setting>
-  </event>
-  <event name="jdk.ObjectAllocationInNewTLAB">
-    <setting name="enabled">true</setting>
-    <setting name="threshold">0 B</setting>
-    <setting name="period">1 s</setting>
-    <setting name="maxage">1 h</setting>
-  </event>
-  <event name="jdk.ObjectCountAfterGC">
-    <setting name="enabled">true</setting>
-    <setting name="period">1 s</setting>
-    <setting name="maxage">1 h</setting>
-  </event>
-  <event name="jdk.ThreadSleep">
-    <setting name="enabled">true</setting>
-    <setting name="threshold">0 ms</setting>
-    <setting name="stacktrace">false</setting>
-    <setting name="period">1 s</setting>
-    <setting name="maxage">1 h</setting>
-  </event>
-  <event name="jdk.ObjectCount">
-    <setting name="enabled" control="memory-profiling-enabled-all">false</setting>
-    <setting name="period">everyChunk</setting>
-  </event>
+
+    <recording name="Objects">
+        <event name="jdk.ObjectAllocationInNewTLAB">
+            <setting name="enabled">true</setting>
+            <setting name="stackTrace">true</setting>
+        </event>
+        <event name="jdk.ObjectAllocationOutsideTLAB">
+            <setting name="enabled">true</setting>
+            <setting name="stackTrace">true</setting>
+        </event>
+        <event name="jdk.ThreadSleep">
+            <setting name="enabled">false</setting>
+        </event>
+        <event name="jdk.GCPhasePause">
+            <setting name="enabled">false</setting>
+        </event>
+        <event name="jdk.GarbageCollection">
+            <setting name="enabled">false</setting>
+        </event>
+        <event name="jdk.ObjectCount">
+            <setting name="enabled">true</setting>
+            <setting name="period">1 s</setting>
+        </event>
+        <event name="jdk.ClassHistogram">
+      	    <setting name="enabled">true</setting>
+    	</event>
+        <event name="jdk.ClassLoaderStatistics">
+            <setting name="enabled">true</setting>
+            <setting name="period">1 s</setting>
+            <setting name="stackTrace">true</setting>
+        </event>
+        <event name="jdk.ThreadAllocation">
+            <setting name="enabled">true</setting>
+            <setting name="period">1 s</setting>
+        </event>
+        <event name="jdk.PhysicalMemory">
+            <setting name="enabled">true</setting>
+            <setting name="period">everyChunk</setting>
+        </event>
+    </recording>
+
+  <recording name="gc">
+        <event name="jdk.GCPhasePause">
+            <setting name="enabled">true</setting>
+        </event>
+        <event name="jdk.GarbageCollection">
+            <setting name="enabled">true</setting>
+            <setting name="stacktrace">true</setting>
+        </event>
+    </recording>
+    
+    <recording name="io">
+        <event name="jdk.SocketRead">
+            <setting name="enabled">true</setting>
+            <setting name="stacktrace">true</setting>
+        </event>
+        <event name="jdk.SocketWrite">
+            <setting name="enabled">true</setting>
+            <setting name="stacktrace">true</setting>
+        </event>
+        <event name="jdk.FileRead">
+            <setting name="enabled">true</setting>
+            <setting name="stacktrace">true</setting>
+        </event>
+        <event name="jdk.FileWrite">
+            <setting name="enabled">true</setting>
+            <setting name="stacktrace">true</setting>
+        </event>
+    </recording>
 </jfc>

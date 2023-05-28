@@ -1,4 +1,0 @@
-pandas
-elasticsearch<7.14.0
-pyarrow
-fastparquet

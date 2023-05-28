@@ -1,0 +1,17 @@
+# Use the official Python image as the base image
+FROM python:3.8-slim-buster
+
+# Set the working directory to /app
+WORKDIR /app
+
+# Copy the requirements file into the container
+COPY req.txt .
+
+# Install any dependencies
+RUN pip install --no-cache-dir -r req.txt
+
+# Copy the Python code into the container
+COPY main.py .
+
+# Set the entrypoint to run the Python code
+ENTRYPOINT ["python", "main.py"]

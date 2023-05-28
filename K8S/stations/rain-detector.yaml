@@ -1,0 +1,37 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: rain-detector-service
+spec:
+  selector:
+    app: rain-detector
+  ports:
+  - name: http
+    port: 80
+    targetPort: 8080
+  type: ClusterIP
+
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rain-detector
+spec:
+  selector:
+    matchLabels:
+      app: rain-detector
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: rain-detector
+    spec:
+      containers:
+      - name: rain-detector
+        image: nourwalid/rain_detector:latest
+        env:
+          - name: KAFKA_SERVER
+            value: "kafka-service:9092"
+        ports:
+        - containerPort: 8080

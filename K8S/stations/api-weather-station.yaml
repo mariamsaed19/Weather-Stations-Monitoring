@@ -1,0 +1,39 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: weather-station-service-10
+spec:
+  selector:
+    app: weather-station-10
+  ports:
+  - name: http
+    port: 80
+    targetPort: 8080
+  type: ClusterIP
+
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: weather-station-10
+spec:
+  selector:
+    matchLabels:
+      app: weather-station-10
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: weather-station-10
+    spec:
+      containers:
+      - name: weather-station-10
+        image: nourwalid/api_weather_station:latest
+        env:
+          - name: ID
+            value: "10"
+          - name: KAFKA_SERVER
+            value: "kafka-service:9092"
+        ports:
+        - containerPort: 8080

@@ -1,4 +1,4 @@
-package kafka;
+package kafka.weatherStation;
 
 import com.google.gson.Gson;
 import java.util.Random;
@@ -55,8 +55,8 @@ public class WeatherStation {
     }
     public void generateStatusMessage(){
         double d = Math.random() * 100;
+        setS_no(getS_no()+1);
         if ((d -= 10) > 0){
-            setS_no(getS_no()+1);
             // create random object
             Random randomno = new Random(); // range ==> (max - min + 1) + min
             if(randomno.nextInt(100)<2) setBattery_status("full");
@@ -66,7 +66,7 @@ public class WeatherStation {
                 else if (percentage < 70) setBattery_status("medium");
                 else if (percentage < 100) setBattery_status("high");
             }
-            setGenerationtime_ms(System.currentTimeMillis());
+            setGenerationtime_ms(System.currentTimeMillis()/1000);
             setTemperature(randomno.nextInt(49) - 3);
             setWindspeed(randomno.nextInt(61)+10);
             setHumidity(randomno.nextInt(111));
@@ -74,15 +74,18 @@ public class WeatherStation {
     }
     public static void main(String[] args) throws InterruptedException {
         Gson gson = new Gson();
-        WeatherStation w = new WeatherStation(7);
+        String id = System.getenv("ID");
+        String kafkaServer = System.getenv("KAFKA_SERVER");
+        WeatherStation w = new WeatherStation(Integer.parseInt(id));
         while(true){
             w.generateStatusMessage();
             String json = gson.toJson(w);
-            ConnectToKafka.connect(json);
+            ConnectToKafka.connect(json, kafkaServer);
             Thread.sleep(1000); // Wait for 1 second
         }
     }
 }
+
 
 
 

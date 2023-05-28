@@ -1,6 +1,8 @@
-package kafka;
+package kafka.weatherStation;
 
 import java.io.IOException;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.Random;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -46,19 +48,20 @@ public class OpenMeteoWeatherStation {
             e.printStackTrace();
         }
         WeatherStation weatherData = new WeatherStation(id);
-            // matching attributes
-            weatherData.setGenerationtime_ms(tmp.get("generationtime_ms").getAsLong());
-            weatherData.setTemperature((9/5 * (tmp.getAsJsonObject("current_weather").get("temperature").getAsInt()))+32);
-            weatherData.setWindspeed(tmp.getAsJsonObject("current_weather").get("windspeed").getAsInt());
-            // missing attributes
-            weatherData.setStation_id(id);
-            double d = Math.random() * 100;
-            int percentage = (int) d;
-            if (percentage < 30)  weatherData.setBattery_status("low");
-            else if (percentage < 70) weatherData.setBattery_status("medium");
-            else if (percentage < 100) weatherData.setBattery_status("high");
-            int humidity = randomno.nextInt(101);
-            weatherData.setHumidity(humidity);
+        // matching attributes
+        LocalDateTime dt = LocalDateTime.parse(tmp.getAsJsonObject("current_weather").get("time").getAsString());
+        weatherData.setGenerationtime_ms(dt.toEpochSecond(ZoneOffset.UTC));
+        weatherData.setTemperature((9/5 * (tmp.getAsJsonObject("current_weather").get("temperature").getAsInt()))+32);
+        weatherData.setWindspeed(tmp.getAsJsonObject("current_weather").get("windspeed").getAsInt());
+        // missing attributes
+        weatherData.setStation_id(id);
+        double d = Math.random() * 100;
+        int percentage = (int) d;
+        if (percentage < 30)  weatherData.setBattery_status("low");
+        else if (percentage < 70) weatherData.setBattery_status("medium");
+        else if (percentage < 100) weatherData.setBattery_status("high");
+        int humidity = randomno.nextInt(101);
+        weatherData.setHumidity(humidity);
 
         return weatherData;
     }
@@ -66,15 +69,18 @@ public class OpenMeteoWeatherStation {
     public static void main(String[] args) throws InterruptedException {
         Gson gson = new Gson();
         OpenMeteoWeatherStation adapter = new OpenMeteoWeatherStation();
+        String id = System.getenv("ID");
+        String kafkaServer = System.getenv("KAFKA_SERVER");
         long seq = 1;
         while(true){
-            WeatherStation weatherData = adapter.constructStation(5);
+            WeatherStation weatherData = adapter.constructStation(Integer.parseInt(id));
             weatherData.setS_no(seq);
             String json = gson.toJson(weatherData);
-            ConnectToKafka.connect(json);
+            ConnectToKafka.connect(json, kafkaServer);
             Thread.sleep(1000); // Wait for 1 second
             seq++;
         }
     }
 
 }
+
